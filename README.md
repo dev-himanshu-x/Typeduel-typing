@@ -67,6 +67,27 @@ Put real values in `.env.local` (git-ignored) — never in `.env.example`.
 | `bun run db:migrate` | Apply pending migrations |
 | `bun run db:studio` | Open Drizzle Studio against the configured database |
 
+## Deployment
+
+The Next.js app and the Socket.IO server are deployed separately — Vercel only runs
+short-lived serverless functions, so it cannot host the long-lived `server/` process.
+
+**Socket.IO server → Render**, from `render.yaml` + `Dockerfile.server` (both at the repo
+root; neither affects the Vercel build):
+
+1. Render dashboard → New → Blueprint → connect this repo. It reads `render.yaml` and
+   creates a `typeduel-socket` web service built from `Dockerfile.server`.
+2. Set its env vars: `CLIENT_ORIGIN` to your Vercel URL(s) (comma-separated if you have
+   a production and preview domain), and `DATABASE_URL` (the pooled Neon string) if you
+   want matches persisted. `PORT` is set by Render automatically.
+3. Render health-checks `/health`. Note the free plan spins the service down when idle,
+   so the first connection after a quiet period will be slow to wake it up — fine for a
+   hobby deployment, upgrade to a paid plan to keep it always warm.
+
+**Next.js app → Vercel**, as already set up. Add one env var there:
+`NEXT_PUBLIC_SOCKET_URL` = the Render service's public URL (e.g.
+`https://typeduel-socket.onrender.com`). Redeploy after setting it.
+
 ## Project structure
 
 ```

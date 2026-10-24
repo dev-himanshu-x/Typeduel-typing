@@ -1,0 +1,9 @@
+node_modules
+.next
+.next-*
+.git
+src
+public
+*.md
+.env*
+!.env.example

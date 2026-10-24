@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: typeduel-socket
+    runtime: docker
+    dockerfilePath: ./Dockerfile.server
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: CLIENT_ORIGIN
+        sync: false
+      - key: DATABASE_URL
+        sync: false
