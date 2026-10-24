@@ -1,0 +1,320 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   Design system — modernized dark SaaS (giga.ai-inspired layout language,
+   Monkeytype's typing-test mechanics kept underneath).
+   1. Raw tokens (:root)      2. Tailwind theme mapping (@theme)
+   3. Base styles             4. Primitives (@layer components)
+   --------------------------------------------------------------------------- */
+
+/* 1. Raw tokens ----------------------------------------------------------- */
+:root {
+  /* Surfaces */
+  --bg: #0b0b0f;
+  --bg-elevated: #15151b;
+  --bg-overlay: rgb(0 0 0 / 0.6);
+  --border: #26262f;
+
+  /* Text */
+  --text: #f2f1f5;        /* active / default text */
+  --text-muted: #8c8b96;  /* secondary UI text, same as untyped */
+
+  /* Typing states */
+  --typing-untyped: #55545f;
+  --typing-correct: #f2f1f5;
+  --typing-incorrect: #ff5470;
+  --typing-incorrect-bg: rgb(255 84 112 / 0.16);
+  --typing-extra: #7a2140; /* extra letters typed past the end of a word */
+  --typing-cursor: #7c5cfc;
+
+  /* Chart series: A = the local player (accent violet), B = the opponent (contrasting teal) */
+  --series-a: var(--typing-cursor);
+  --series-b: #45d0c7;
+  --chart-grid: var(--text-muted);
+
+  /* Accent (buttons, focus ring) shares the cursor colour */
+  --accent: var(--typing-cursor);
+  --on-accent: #0b0b0f;
+
+  /* Shape + motion */
+  --radius: 0.875rem;
+  --radius-sm: 0.4rem;
+  --radius-pill: 999px;
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 125ms;
+
+  /* Elevation: soft dark shadows + an accent-tinted glow for primary/active elements */
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 8px 24px -8px rgb(0 0 0 / 0.55);
+  --shadow-glow: 0 0 0 1px rgb(124 92 252 / 0.35), 0 8px 24px -4px rgb(124 92 252 / 0.35);
+
+  /* Typing-test canvas layout (1280px wide, 2rem text, 3 lines) */
+  --canvas-max-width: 80rem; /* 1280px */
+  --canvas-gutter: 2rem;
+  --canvas-font-size: 2rem;
+  --canvas-line-height: 1.6; /* line pitch = word height + .25em margins */
+  --canvas-lines: 3;
+  --page-max-width: 80rem;
+}
+
+/* Narrow screens: smaller canvas text and gutters so lines still hold ~20+ characters. */
+@media (max-width: 40rem) {
+  :root {
+    --canvas-font-size: 1.25rem;
+    --canvas-gutter: 1rem;
+  }
+}
+
+/* 2. Tailwind theme mapping (generates bg-*, text-*, border-*, font-*, ...) - */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-overlay: var(--bg-overlay);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+
+  --color-untyped: var(--typing-untyped);
+  --color-extra: var(--typing-extra);
+  --color-sub: var(--text-muted);
+  --color-sub-alt: var(--bg-elevated);
+  --color-main: var(--typing-cursor);
+  --color-active: var(--typing-correct);
+  --color-correct: var(--typing-correct);
+  --color-incorrect: var(--typing-incorrect);
+  --color-incorrect-bg: var(--typing-incorrect-bg);
+  --color-cursor: var(--typing-cursor);
+  --color-series-a: var(--series-a);
+  --color-series-b: var(--series-b);
+  --color-accent: var(--accent);
+  --color-on-accent: var(--on-accent);
+
+  --radius-DEFAULT: var(--radius);
+  --radius-sm: var(--radius-sm);
+  --radius-pill: var(--radius-pill);
+
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-glow: var(--shadow-glow);
+
+  /* Sans (Lexend Deca) is the UI chrome font; mono (Roboto Mono) is reserved for "data":
+     the typing canvas, timer, stat numbers, room codes, kbd hints. */
+  --font-mono: var(--font-roboto-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-logo: var(--font-lexend-deca), var(--font-roboto-mono), sans-serif;
+  --font-sans: var(--font-lexend-deca), ui-sans-serif, system-ui, sans-serif;
+
+  --container-canvas: var(--canvas-max-width);
+  --container-page: var(--page-max-width);
+}
+
+/* 3. Base ----------------------------------------------------------------- */
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+}
+
+::selection {
+  background: var(--typing-cursor);
+  color: var(--bg);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* 4. Primitives ----------------------------------------------------------- */
+@layer components {
+  /* Containers */
+  .page-container {
+    width: 100%;
+    max-width: var(--page-max-width);
+    margin-inline: auto;
+    padding-inline: var(--canvas-gutter);
+  }
+
+  .panel {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
+    padding: 1.75rem;
+  }
+
+  /* Floating pill container used by the header and the config bar's segmented groups. */
+  .pill-surface {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-pill);
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* Typing-test canvas: vertically + horizontally centred, fixed text metrics. */
+  .typing-stage {
+    display: grid;
+    place-items: center;
+    min-height: 100dvh;
+    padding: var(--canvas-gutter);
+  }
+
+  .typing-canvas {
+    width: 100%;
+    max-width: var(--canvas-max-width);
+    margin-inline: auto;
+    font-size: var(--canvas-font-size);
+    line-height: var(--canvas-line-height);
+    /* Reserve exactly N lines so the layout doesn't jump while typing. */
+    min-height: calc(var(--canvas-font-size) * var(--canvas-line-height) * var(--canvas-lines));
+    color: var(--typing-untyped);
+    user-select: none;
+  }
+
+  /* Text field */
+  .input {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font: inherit;
+    line-height: 1.25;
+    transition: border-color var(--duration-fast) var(--ease);
+  }
+  .input::placeholder {
+    color: var(--text-muted);
+  }
+  .input:hover {
+    border-color: var(--text-muted);
+  }
+  .input:focus-visible {
+    border-color: var(--accent);
+    outline-offset: 0;
+  }
+
+  /* Buttons: .btn + one variant (+ optional .btn-sm) */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1.25rem;
+    border: 1px solid transparent;
+    border-radius: var(--radius-pill);
+    font: inherit;
+    line-height: 1.25;
+    cursor: pointer;
+    transition:
+      background-color var(--duration-fast) var(--ease),
+      color var(--duration-fast) var(--ease),
+      border-color var(--duration-fast) var(--ease),
+      box-shadow var(--duration-fast) var(--ease);
+  }
+
+  .caret-blink {
+    animation: caret-blink 1s infinite;
+  }
+
+  .btn:disabled,
+  .btn[aria-disabled="true"] {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .btn-sm {
+    padding: 0.25rem 0.625rem;
+    font-size: 0.875rem;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: var(--on-accent);
+  }
+  .btn-primary:hover {
+    background: color-mix(in srgb, var(--accent) 85%, white);
+    box-shadow: var(--shadow-glow);
+  }
+
+  .btn-secondary {
+    background: var(--bg-elevated);
+    color: var(--text);
+    border-color: var(--border);
+  }
+  .btn-secondary:hover {
+    border-color: var(--text-muted);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-muted);
+  }
+  .btn-ghost:hover {
+    color: var(--text);
+    background: var(--bg-elevated);
+  }
+
+  .btn-danger {
+    background: var(--typing-incorrect);
+    color: var(--text);
+  }
+  .btn-danger:hover {
+    background: color-mix(in srgb, var(--typing-incorrect) 85%, white);
+  }
+
+  /* Modal primitives: backdrop > .modal > header/body/footer */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+    background: var(--bg-overlay);
+    backdrop-filter: blur(4px);
+  }
+
+  .modal {
+    width: 100%;
+    max-width: 28rem;
+    max-height: calc(100dvh - 2rem);
+    overflow-y: auto;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: calc(var(--radius) * 1.3);
+    box-shadow:
+      0 0 0 1px rgb(124 92 252 / 0.12),
+      0 20px 50px rgb(0 0 0 / 0.55);
+  }
+
+  .modal-header,
+  .modal-body,
+  .modal-footer {
+    padding: 1rem 1.5rem;
+  }
+  .modal-header {
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+  .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    border-top: 1px solid var(--border);
+  }
+}
+
+@keyframes caret-blink {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+}
